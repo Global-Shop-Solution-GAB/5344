@@ -1,0 +1,316 @@
+Program.Sub.ScreenSU.Start
+Gui.FormPreProc..Create
+Gui.FormPreProc..Caption("XRef Inventory On Hand")
+Gui.FormPreProc..Size(4695,1665)
+Gui.FormPreProc..MinX(0)
+Gui.FormPreProc..MinY(0)
+Gui.FormPreProc..Position(0,0)
+Gui.FormPreProc..BackColor(-2147483633)
+Gui.FormPreProc..MaxButton(False)
+Gui.FormPreProc..MousePointer(0)
+Gui.FormPreProc..Sizeable(False)
+Gui.FormPreProc..Event(UnLoad,FormPreProc_UnLoad)
+Gui.FormPreProc.ddlCustomer.Create(DropDownList)
+Gui.FormPreProc.ddlCustomer.Size(2760,330)
+Gui.FormPreProc.ddlCustomer.Position(750,420)
+Gui.FormPreProc.ddlCustomer.Event(Click,ddlCustomer_Click)
+Gui.FormPreProc.lblCustomer.Create(Label,"Select a customer :",True,1515,255,0,1500,195,True,0,"Arial",8,-2147483633,0)
+Gui.FormPreProc.cmdPrint.Create(Button)
+Gui.FormPreProc.cmdPrint.Size(990,375)
+Gui.FormPreProc.cmdPrint.Position(2985,840)
+Gui.FormPreProc.cmdPrint.Caption("Print")
+Gui.FormPreProc.cmdPrint.Event(Click,cmdPrint_Click)
+Gui.FormPreProc.cmdPrint.Enabled(False)
+Gui.FormPreProc.cmdCustomerBrowser.Create(Button)
+Gui.FormPreProc.cmdCustomerBrowser.Size(405,405)
+Gui.FormPreProc.cmdCustomerBrowser.Position(3555,375)
+Gui.FormPreProc.cmdCustomerBrowser.Caption("^")
+Gui.FormPreProc.cmdCustomerBrowser.Event(Click,cmdCustomerBrowser_Click)
+Gui.FormPreProc.chkPO.Create(CheckBox)
+Gui.FormPreProc.chkPO.Size(1560,360)
+Gui.FormPreProc.chkPO.Position(765,840)
+Gui.FormPreProc.chkPO.Caption("Include POs")
+Gui.FormPreProc.chkPO.Value(1)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.bPO.Declare(Boolean)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+F.Intrinsic.Control.CallSub(LoadCustomers)
+GUI.FormPreProc..Show
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End 
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.LoadCustomers.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+V.Local.sSQL.Declare(String)
+
+V.Local.sSQL.Set("select distinct RTRIM(CUSTOMER) as Customer, RTRIM(NAME_CUSTOMER) as NAME_CUSTOMER from V_CUSTOMER_MASTER order by NAME_CUSTOMER")
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.Data.Dictionary.CreateFromSQL("dictCustomers", "Con", V.Local.sSQL)
+F.Data.Dictionary.SetDefaultReturn("dictCustomers", "")
+F.Data.Dictionary.SetDefaultKey("dictCustomers", "***NORETURN***")
+F.ODBC.Connection!Con.Close
+
+GUI.FormPreProc.ddlCustomer.AddItems("Dictionary", "dictCustomers")
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End 
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadCustomers.End
+
+Program.Sub.FormPreProc_UnLoad.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+V.Local.bExists.Declare(Boolean)
+
+F.Data.Dictionary.Exists("dictCustomers", V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists)
+	F.Data.Dictionary.Close("dictCustomers")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End 
+F.Intrinsic.Control.EndTry
+Program.Sub.FormPreProc_UnLoad.End
+
+Program.Sub.cmdCustomerBrowser_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+GUI.FormPreProc.cmdCustomerBrowser.Enabled(False)
+
+V.Local.sRet.Declare(String)
+F.Intrinsic.UI.Browser(205, "", V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Local.sRet.IsNotCancel)
+	F.Intrinsic.String.Split(V.Local.sRet, "*!*", V.Local.sRet)
+	GUI.FormPreProc.ddlCustomer.Text(V.Local.sRet(1).Trim)
+	GUI.FormPreProc.cmdPrint.Enabled(True)
+	
+F.Intrinsic.Control.EndIf
+
+GUI.FormPreProc.cmdCustomerBrowser.Enabled(True)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End 
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdCustomerBrowser_Click.End
+
+Program.Sub.cmdPrint_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+V.Local.sCust.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sFilter.Declare(String)
+V.Local.iCounter.Declare(Long)
+V.Local.sProcessed.Declare(String)
+V.Local.bInString.Declare(Boolean)
+V.Local.sTemp.Declare(String)
+V.Local.fTemp.Declare(Float)
+V.Local.sParams.Declare(String)
+V.Local.sParamNames.Declare(String)
+V.Local.iBiRun.Declare(Long)
+V.Local.iBILOG.Declare(Long)
+
+GUI.FormPreProc..Enabled(False)
+V.Global.bPO.Set(V.Screen.FormPreProc!chkPO.checkedAsBoolean)
+
+F.Global.BI.GetRunID(V.Local.iBiRun)
+F.Global.BI.StartLogging(V.Local.iBiRun, -1, -1, "", V.Local.iBILOG)
+
+V.Local.sCust.Set(V.Screen.FormPreProc!ddlCustomer.Text.Trim)
+F.Data.Dictionary.ReturnKeyFromValue("dictCustomers", V.Local.sCust, V.Local.sCust)
+F.Intrinsic.Control.If(V.Local.sCust.Trim, =, "***NORETURN***")
+	F.Intrinsic.UI.Msgbox("Error: Invalid Customer")
+	GUI.FormPreProc..Enabled(True)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.Data.Dictionary.CreateFromSQL("dictCustID", "Con", "select RTRIM(CUSTOMER) as CUSTOMER, RTRIM(EXTERNAL_ID) as EXTERNAL_ID from V_CUST_FORM_INFO")
+F.Data.Dictionary.SetDefaultReturn("dictCustID", "***NORETURN***")
+
+'apparently they don't do actual cross reference, but put the customer in the text_info1... so that's cool
+'F.Intrinsic.String.Build("select RTRIM(PART) as PART, RTRIM(LOCATION) as LOCATION, RTRIM(CUSTOMER) as CUSTOMER, RTRIM(CUSTOMER_PART) as CUSTOMER_PART, RTRIM(DESCRIPTION) as DESCRIPTION from V_INV_CROSS_REF where CUSTOMER = '{0}'", V.Local.sCust, V.Local.sSQL)
+F.Intrinsic.String.Build("select RTRIM(PART) as PART, RTRIM(LOCATION) as LOCATION, RTRIM(TEXT_INFO1) as CUSTOMER, RTRIM(PART) as CUSTOMER_PART from V_INVENTORY_MST2 where TEXT_INFO1 = '{0}'", V.Dictionary.dictCustID![V.Local.sCust], V.Local.sSQL)
+F.Data.Dictionary.Close("dictCustID")
+
+
+F.Intrinsic.Control.If(V.DataTable.dtXRef.Exists)
+	F.Data.DataTable.Close("dtXRef")
+F.Intrinsic.Control.EndIf
+F.Data.DataTable.CreateFromSQL("dtXRef", "Con", V.Local.sSQL)
+
+F.Intrinsic.Control.If(V.DataTable.dtXRef.RowCount, =, 0)
+	F.Intrinsic.UI.Msgbox("No records to print.")
+	F.ODBC.Connection!Con.Close
+	GUI.FormPreProc..Enabled(True)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Build("PART = '{0}' and LOCATION = '{1}'", V.DataTable.dtXRef(0).PART!FieldValTrim, V.DataTable.dtXRef(0).LOCATION!FieldValTrim, V.Local.sFilter)
+	F.Intrinsic.Control.For(V.Local.iCounter, 1, V.DataTable.dtXRef.RowCount--, 1)	
+		F.Intrinsic.String.Build("{2} or PART = '{0}' and LOCATION = '{1}'", V.DataTable.dtXRef(V.Local.iCounter).PART!FieldValTrim, V.DataTable.dtXRef(V.Local.iCounter).LOCATION!FieldValTrim, V.Local.sFilter, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+'F.Intrinsic.String.Build("select RTRIM(PART) as PART, RTRIM(LOCATION) as LOCATION, RTRIM(UM_INVENTORY) as UM, QTY_ONHAND, QTY_ONORDER_PO from V_INVENTORY_MSTR where {0}", V.Local.sFilter, V.Local.sSQL)
+F.Intrinsic.String.Build("select RTRIM(PART) as PART, RTRIM(LOCATION) as LOCATION, RTRIM(UM_INVENTORY) as UM, QTY_ONHAND, QTY_ONORDER_PO, RTRIM(DESCRIPTION) as DESCRIPTION from V_INVENTORY_MSTR where {0}", V.Local.sFilter, V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtParts", "Con", V.Local.sSQL)
+
+''need to look at location here
+'F.Intrinsic.String.Replace(V.Local.sFilter, "LOCATION", "FROM_LOCATION", V.Local.sFilter)
+'F.Intrinsic.String.Build("select RTRIM(PART) as PART, RTRIM(FROM_LOCATION) as FROM_LOCATION, SUM(QTY_TRANSFER) - SUM(QTY_RECEIVED) as IN_TRANSIT from V_INV_IN_TRANSIT where {0} group by PART, FROM_LOCATION", V.Local.sFilter, V.Local.sSQL)
+'F.Data.DataTable.CreateFromSQL("dtInTransit", "Con", V.Local.sSQL)
+'F.Data.Linq.Join("LeftJoin", "DataTable", "dtXRef*!*A", "DataTable", "dtParts*!*B", "A.PART = B.PART and A.LOCATION = B.LOCATION", "DataTable", "dtInTransit*!*C", "A.PART = C.PART and A.LOCATION = C.FROM_LOCATION", "A.PART*!*A.LOCATION*!*A.CUSTOMER_PART*!*A.DESCRIPTION*!*B.UM*!*B.QTY_ONHAND*!*B.QTY_ONORDER_PO*!*C.IN_TRANSIT", "", "", "", "dtAll", True)
+
+F.Data.Linq.Join("LeftJoin", "DataTable", "dtXRef*!*A", "DataTable", "dtParts*!*B", "A.PART = B.PART and A.LOCATION = B.LOCATION", "A.PART*!*A.LOCATION*!*A.CUSTOMER_PART*!*B.DESCRIPTION*!*B.UM*!*B.QTY_ONHAND*!*B.QTY_ONORDER_PO", "", "", "", "dtAll", True)
+
+F.Data.DataTable.Close("dtXRef")
+F.Data.DataTable.Close("dtParts")
+'F.Data.DataTable.Close("dtInTransit")
+
+'get POs
+F.Intrinsic.String.Replace(V.Local.sFilter, "FROM_LOCATION", "LOCATION", V.Local.sFilter)
+F.Intrinsic.String.Build("select RTRIM(PURCHASE_ORDER) as PO, RTRIM(RECORD_NO) as PO_LINE, RTRIM(PART) as PART, RTRIM(LOCATION) as LOCATION, DATE_DUE_LINE, QTY_ORDER - QTY_RECEIVED - QTY_REJECT as QTY from V_PO_LINES where QTY_RECEIVED < QTY_ORDER and ({0}) order by PO", V.Local.sFilter, V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtPOs", "Con", V.Local.sSQL)
+
+'build PO Filter
+F.Intrinsic.Control.If(V.DataTable.dtPOs.RowCount, >, 0)
+	F.Intrinsic.String.Build("PO = '{0}' and PO_LINE = '{1}'", V.DataTable.dtPOs(0).PO!FieldValTrim, V.DataTable.dtPOs(0).PO_LINE!FieldValTrim, V.Local.sFilter)
+	F.Intrinsic.Control.For(V.Local.iCounter, 1, V.DataTable.dtPOs.RowCount--, 1)	
+		F.Intrinsic.String.Build("{2} or PO = '{0}' and PO_LINE = '{1}'", V.DataTable.dtPOs(V.Local.iCounter).PO!FieldValTrim, V.DataTable.dtPOs(V.Local.iCounter).PO_LINE!FieldValTrim, V.Local.sFilter, V.Local.sFilter)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.Else
+	V.Local.sFilter.Set("PO = ''")
+F.Intrinsic.Control.EndIf
+
+'get in transit for dtAll
+F.Data.DataTable.AddColumn("dtAll", "IN_TRANSIT", "FLOAT", 0)
+F.Data.DataTable.AddExpressionColumn("dtAll", "PARTLOC", "String", "Part + '-' + Location")
+F.Intrinsic.String.Build("select RTRIM(A.PART) + '-' + RTRIM(A.Location) as PARTLOC, sum(B.QTY_IN_CONTAINER - B.RECVD_QTY - B.REJ_QTY) as QTY_TRANSIT from V_PO_LINES A left join V_PO_CONTAINER B on A.PURCHASE_ORDER = B.PO and A.RECORD_NO = B.PO_LINE where B.QTY_IN_CONTAINER > B.RECVD_QTY and ({0}) group by PARTLOC", V.Local.sFilter, V.Local.sSQL)
+F.Data.Dictionary.CreateFromSQL("dictInTransit", "Con", V.Local.sSQL)
+F.Data.Dictionary.SetDefaultReturn("dictInTransit", 0)
+F.Data.DataTable.FillFromDictionary("dtAll", "dictInTransit", "PARTLOC", "IN_TRANSIT")
+F.Data.DataTable.AddExpressionColumn("dtAll", "ON_ORDER", "Float", "QTY_ONORDER_PO - IN_TRANSIT")
+
+'get containers
+F.Intrinsic.String.Build("Select RTRIM(PO) as PO, RTRIM(PO_LINE) as PO_LINE, RTRIM(CONTAINER) as CONTAINER, QTY_IN_CONTAINER - RECVD_QTY - REJ_QTY as QTY_CONTAINER, DUE_DATE from V_PO_CONTAINER where CLOSE_FLAG <> 1 and RECVD_QTY < QTY_IN_CONTAINER and ({0})", V.Local.sFilter, V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtContainers", "Con", V.Local.sSQL)
+
+F.Data.Linq.Join("LeftJoin", "DataTable", "dtPOs*!*A", "DataTable", "dtContainers*!*B", "A.PO = B.PO and A.PO_LINE = B.PO_LINE", "A.PO*!*A.PO_LINE*!*A.PART*!*A.LOCATION*!*A.DATE_DUE_LINE*!*A.QTY*!*B.CONTAINER*!*B.QTY_CONTAINER*!*B.DUE_DATE", "", "", "", "dtSupply", True)
+F.Data.DataTable.Close("dtPOs")
+F.Data.DataTable.Close("dtContainers")
+
+F.Intrinsic.Control.If(V.DataTable.dtSupply.RowCount, >, 0)
+	'get qty in container per line
+	F.Intrinsic.String.Build("select PO + '-' + PO_LINE as LINE, sum(QTY_IN_CONTAINER) from V_PO_CONTAINER where CLOSE_FLAG <> 1 and QTY_IN_CONTAINER > RECVD_QTY and ({0}) group by PO, PO_LINE", V.Local.sFilter, V.Local.sSQL)
+	F.Data.Dictionary.CreateFromSQL("dictInContainer", "Con", V.Local.sSQL)
+	F.Data.Dictionary.SetDefaultReturn("dictInContainer", 0)
+	F.Data.DataTable.AddExpressionColumn("dtSupply", "LINE", "String", "PO + '-' + PO_LINE")
+	F.Data.DataTable.AddColumn("dtSupply", "IN_CONTAINER", "Float", 0)
+	F.Data.DataTable.FillFromDictionary("dtSupply", "dictInContainer", "LINE", "IN_CONTAINER")
+	
+	F.Data.DataTable.AddExpressionColumn("dtSupply", "Type", "String", "IIF(QTY_CONTAINER > 0, 'Container', 'PO')")
+	
+	'add POs for POs with container but not full amount in container
+	F.Data.DataView.Create("dtSupply", "dvExtraPO", 22, "QTY > IN_CONTAINER and IN_CONTAINER > 0", "")
+	F.Intrinsic.Control.If(V.DataView.dtSupply!dvExtraPO.RowCount, >, 0)
+		F.Intrinsic.Control.For(V.Local.iCounter, 0, V.DataView.dtSupply!dvExtraPO.RowCount--, 1)
+			F.Intrinsic.String.IsInString(V.Local.sProcessed, V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).LINE!FieldValTrim, True, V.Local.bInString)
+			F.Intrinsic.Control.If(V.Local.bInString.Not)
+				F.Intrinsic.String.Build("{0}*!*{1}", V.Local.sProcessed, V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).LINE!FieldValTrim, V.Local.sProcessed)
+				'add the line, because full amount is not in container
+				F.Intrinsic.Math.Sub(V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).QTY!FieldValFloat, V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).IN_CONTAINER!FieldValFLOAT, V.Local.fTemp)
+				F.Data.DataTable.AddRow("dtSupply", "PO", V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).PO!FieldValTrim, "PO_LINE", V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).PO_LINE!FieldValTrim, "DATE_DUE_LINE", V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).DATE_DUE_LINE!FieldVal, "QTY", V.Local.fTemp, "Part", V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).PART!FieldValTrim, "Location", V.DataView.dtSupply!dvExtraPO(V.Local.iCounter).Location!FieldValTrim, "Type", "PO")
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.iCounter)
+	F.Intrinsic.Control.EndIf
+	F.Data.DataView.Close("dtSupply", "dvExtraPO")
+	
+	F.Data.DataTable.AddExpressionColumn("dtSupply", "Due", "String", "IIF(QTY_CONTAINER > 0, Due_Date, Date_Due_Line)")
+	F.Data.DataTable.AddColumn("dtSupply", "Due_Format", "String", "1900-01-01")
+	F.Data.DataTable.SetValueFormat("dtSupply", -1, "Due", "Due_Format", "YYYY-MM-DD")
+	F.Data.DataTable.AddExpressionColumn("dtSupply", "Quantity", "String", "IIF(QTY_CONTAINER > 0, QTY_CONTAINER, QTY)")
+	F.Data.DataTable.AddExpressionColumn("dtSupply", "Identifier", "String", "IIF(QTY_CONTAINER > 0, CONTAINER, LINE)")
+	
+	F.Intrinsic.String.Build("delete from GCG_5344_ONORDER where TERMINAL = '{0}'", V.Caller.Terminal, V.Local.sSQL)
+	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+	F.Data.DataTable.AddColumn("dtSupply", "TERMINAL", "STRING", V.Caller.Terminal)
+	F.Data.DataTable.AddColumn("dtSupply", "BIRUN", "STRING", V.Local.iBiRun)
+	
+	F.Intrinsic.Control.If(V.Global.bPO)
+		F.Data.DataTable.SaveToDB("dtSupply", "Con", "GCG_5344_ONORDER", "TERMINAL*!*IDENTIFIER", 256, "TERMINAL@!@TERMINAL*!*IDENTIFIER@!@PO_CONTAINER*!*PART@!@PART*!*LOCATION@!@LOCATION*!*TYPE@!@TYPE*!*DUE_FORMAT@!@DUE*!*QUANTITY@!@QTY*!*BIRUN@!@BIRUN")
+	F.Intrinsic.Control.Else
+		F.Data.DataView.Create("dtSupply", "dvNoPO", 22, "Type = 'Container'", "")
+		F.Data.DataView.ToDataTable("dtSupply", "dvNoPO", "dtNoPO")
+		F.Data.DataView.Close("dtSupply", "dvNoPO")
+		F.Data.DataTable.SaveToDB("dtNoPO", "Con", "GCG_5344_ONORDER", "TERMINAL*!*IDENTIFIER", 256, "TERMINAL@!@TERMINAL*!*IDENTIFIER@!@PO_CONTAINER*!*PART@!@PART*!*LOCATION@!@LOCATION*!*TYPE@!@TYPE*!*DUE_FORMAT@!@DUE*!*QUANTITY@!@QTY*!*BIRUN@!@BIRUN")
+		F.Data.DataTable.Close("dtNoPO")
+	F.Intrinsic.Control.EndIf
+	
+	F.Data.DataTable.Close("dtSupply")
+	F.Data.Dictionary.Close("dictInContainer")
+F.Intrinsic.Control.EndIf
+
+F.Data.DataTable.AddColumn("dtAll", "TERMINAL", "STRING", V.Caller.Terminal)
+F.Data.DataTable.AddColumn("dtAll", "BIRUN", "STRING", V.Local.iBiRun)
+F.Intrinsic.String.Build("delete from GCG_5344_ONHAND where TERMINAL = '{0}'", V.Caller.Terminal, V.Local.sSQL)
+F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+F.Data.DataTable.SaveToDB("dtAll", "Con", "GCG_5344_ONHAND", "TERMINAL*!*PART*!*LOCATION", 256, "TERMINAL@!@TERMINAL*!*PART@!@PART*!*LOCATION@!@LOCATION*!*CUSTOMER_PART@!@CUSTOMER_PART*!*DESCRIPTION@!@DESCRIPTION*!*UM@!@UM*!*QTY_ONHAND@!@QTY_ONHAND*!*ON_ORDER@!@QTY_ONORDER_PO*!*IN_TRANSIT@!@IN_TRANSIT*!*BIRUN@!@BIRUN")
+F.Data.DataTable.Close("dtAll")
+F.Data.Dictionary.Close("dictInTransit")
+
+V.Local.sParamNames.Set("CUSTOMER")
+V.Local.sCust.Set(V.Dictionary.dictCustomers![V.Local.sCust])
+V.Local.sParams.Set(V.Local.sCust)
+F.Global.BI.StopLogging(V.Local.iBILOG)
+
+GUI.FormPreProc..Visible(False)
+F.Global.BI.RunReportPreProcessor(V.Local.iBiRun, V.Local.iBILOG, V.Local.sParamNames, V.Local.sParams, "", -1, True, "", -1, "", -1, "", "", V.Local.iBiRun)
+
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.CallSub(FormPreProc_UnLoad)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End 
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdPrint_Click.End
+
+Program.Sub.ddlCustomer_Click.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+
+GUI.FormPreProc.cmdPrint.Enabled(True)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End 
+F.Intrinsic.Control.EndTry
+Program.Sub.ddlCustomer_Click.End
